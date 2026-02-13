@@ -7,12 +7,8 @@ Interactive dashboard for real-time stock analysis with technical indicators.
 import streamlit as st
 import yfinance as yf
 import pandas as pd
-import numpy as np
 import plotly.graph_objects as go
-import plotly.express as px
-from datetime import datetime, timedelta
-import warnings
-warnings.filterwarnings('ignore')
+from datetime import datetime
 
 class StockAnalyzer:
     """Real-time stock analysis with technical indicators."""
@@ -47,12 +43,14 @@ class StockAnalyzer:
         loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
         rs = gain / loss
         self.data['RSI'] = 100 - (100 / (1 + rs))
+        # When loss is 0, RSI should be 100 (all gains, no losses)
+        self.data.loc[loss == 0, 'RSI'] = 100
         
         # MACD
-        exp1 = self.data['Close'].ewm(span=12).mean()
-        exp2 = self.data['Close'].ewm(span=26).mean()
+        exp1 = self.data['Close'].ewm(span=12, adjust=False).mean()
+        exp2 = self.data['Close'].ewm(span=26, adjust=False).mean()
         self.data['MACD'] = exp1 - exp2
-        self.data['MACD_Signal'] = self.data['MACD'].ewm(span=9).mean()
+        self.data['MACD_Signal'] = self.data['MACD'].ewm(span=9, adjust=False).mean()
         
         # Bollinger Bands
         self.data['BB_Middle'] = self.data['Close'].rolling(window=20).mean()
@@ -205,7 +203,7 @@ class StockAnalyzer:
                 'P/E Ratio': f"{info.get('trailingPE', 0):.2f}" if info.get('trailingPE') else 'N/A',
                 'Dividend Yield': f"{info.get('dividendYield', 0)*100:.2f}%" if info.get('dividendYield') else 'N/A'
             }
-        except:
+        except Exception:
             return {}
 
 def main():
@@ -269,9 +267,12 @@ def main():
                         current_price = analyzer.data['Close'].iloc[-1]
                         st.metric("Current Price", f"${current_price:.2f}")
                     with col2:
-                        price_change = analyzer.data['Close'].iloc[-1] - analyzer.data['Close'].iloc[-2]
-                        change_pct = (price_change / analyzer.data['Close'].iloc[-2]) * 100
-                        st.metric("Daily Change", f"${price_change:.2f}", f"{change_pct:.2f}%")
+                        if len(analyzer.data) >= 2:
+                            price_change = analyzer.data['Close'].iloc[-1] - analyzer.data['Close'].iloc[-2]
+                            change_pct = (price_change / analyzer.data['Close'].iloc[-2]) * 100
+                            st.metric("Daily Change", f"${price_change:.2f}", f"{change_pct:.2f}%")
+                        else:
+                            st.metric("Daily Change", "N/A")
                     with col3:
                         st.metric("Market Cap", stock_info.get('Market Cap', 'N/A'))
                     with col4:
