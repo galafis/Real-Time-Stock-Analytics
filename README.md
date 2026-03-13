@@ -5,6 +5,7 @@
 [![Plotly](https://img.shields.io/badge/Plotly-5.0+-3F4F75.svg)](https://plotly.com/)
 [![yfinance](https://img.shields.io/badge/yfinance-0.2+-blue.svg)](https://pypi.org/project/yfinance/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker)](Dockerfile)
 
 [Portugues](#portugues) | [English](#english)
 
